@@ -1,0 +1,16 @@
+#map {
+    height: 100vh;
+    width: 100%;
+    z-index: 0;
+}
+
+
+
+.search-bar.active {
+    position: absolute;
+    top: 8em;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 33%;
+    transition: all 0.2s ease-in-out;
+}
