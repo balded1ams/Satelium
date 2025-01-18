@@ -1,7 +1,9 @@
-from flask import Flask, request, render_template
+from app import app
+from flask import request, render_template
 from skyfield.api import utc, load, EarthSatellite
 from datetime import datetime, timedelta, UTC
-from tle import TLEs
+from .tle import TLEs
+from .sat import get_passes, get_trajectory, get_current_position
 import os
 
 import urllib.request
@@ -21,36 +23,12 @@ if not os.path.exists("tles.txt"):
 tles = TLEs()
 tles.load("tles.txt")
 
-ts = load.timescale()
-
-def get_trajectory(satellite: EarthSatellite,
-                   rev_count: int = 1, step: int = 60) -> list[dict]:
-
-    rev_duration = 60/(satellite.model.no / (2 * 3.1415))
-    start = ts.from_datetime(datetime.now(UTC).replace(tzinfo=utc))
-    end = ts.from_datetime(
-        (datetime.now(UTC) + timedelta(seconds=rev_duration * rev_count)).replace(tzinfo=utc)
-    )
-
-    positions = []
-    time = start
-    while time < end:
-        geocentric = satellite.at(time).subpoint()
-        positions.append({
-            "lat": float(geocentric.latitude.degrees),
-            "lon": float(geocentric.longitude.degrees)
-        })
-        time = time + timedelta(seconds=step)
-    return positions
-
-app = Flask(__name__)
-
-
 @app.route('/api/search')
 def hello_world():
     query = request.args.get("query")
     if not query: return "Pls gimme query", 418
     return [{"name": tle.satname, "id": tle.norad_id} for tle in tles.search(query)]
+
 
 @app.route('/api/trajectory')
 def trajectory():
@@ -63,6 +41,7 @@ def trajectory():
 
     return get_trajectory(satellite.get_satellite(), 3)
 
+
 @app.route('/api/position')
 def position():
     norad_id = request.args.get("norad_id")
@@ -73,18 +52,14 @@ def position():
     if not satellite_tle: return "Unknown NORAD ID", 500
 
     satellite = satellite_tle.get_satellite()
-
-    now = ts.from_datetime(datetime.now(UTC).replace(tzinfo=utc))
-    geocentric = satellite.at(now).subpoint()
+    geocentric = get_current_position(satellite)
 
     return {
         "lat": float(geocentric.latitude.degrees),
         "lon": float(geocentric.longitude.degrees)
     }
 
+
 @app.route('/')
 def index():
     return render_template("index.html")
-
-if __name__ == '__main__':
-    app.run(port=8080, debug=True)
