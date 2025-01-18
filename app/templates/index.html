@@ -23,14 +23,23 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.js"></script>
     <script>
+        const R = 6378;
+
         const map = L.map('map').setView([0, 0], 2);
+
         const satellite = L.marker([0, 0]).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        var polylinePoints = [];
+        const circle = L.circle([0, 0], 100000).addTo(map);
+
+        L.tileLayer(
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {noWrap: true}
+        ).addTo(map);
+
 
         fetch("/api/trajectory?norad_id=25544")
             .then(data => data.json())
             .then(data => {
+                var polylinePoints = [];
                 let lastPoint = null;
                 for (const point of data) {
                     if (lastPoint) {
@@ -52,6 +61,8 @@
                 .then(data => data.json())
                 .then(data => {
                     satellite.setLatLng([data.lat, data.lon]);
+                    circle.setLatLng([data.lat, data.lon]);
+                    circle.setRadius(R*Math.acos(R/(R+data.alt))*1000)
                 });
         }, 1000);
     </script>

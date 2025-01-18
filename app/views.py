@@ -39,7 +39,7 @@ def trajectory():
     satellite = tles.get_tle_by_id(int(norad_id))
     if not satellite: return "Unknown NORAD ID", 500
 
-    return get_trajectory(satellite.get_satellite(), 3)
+    return get_trajectory(satellite.get_satellite(), 1)
 
 
 @app.route('/api/position')
@@ -56,7 +56,8 @@ def position():
 
     return {
         "lat": float(geocentric.latitude.degrees),
-        "lon": float(geocentric.longitude.degrees)
+        "lon": float(geocentric.longitude.degrees),
+        "alt": float(geocentric.elevation.km)
     }
 
 

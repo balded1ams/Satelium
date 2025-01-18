@@ -1,9 +1,11 @@
 from skyfield.api import Topos, EarthSatellite, Time,utc, load
 from datetime import datetime, timedelta, UTC
 
+from skyfield.toposlib import GeographicPosition
+
 ts = load.timescale()
 
-def get_current_position(sat: EarthSatellite):
+def get_current_position(sat: EarthSatellite) -> GeographicPosition:
 
     now = ts.from_datetime(datetime.now(UTC).replace(tzinfo=utc))
     return sat.at(now).subpoint()
@@ -53,9 +55,12 @@ def get_passes(sat: EarthSatellite, obs: Topos,
 
 
 def get_trajectory(satellite: EarthSatellite,
-                   rev_count: int = 1, step: int = 60) -> list[dict]:
+                   rev_count: int = 1, step: int = None) -> list[dict]:
 
     rev_duration = 60/(satellite.model.no / (2 * 3.1415))
+
+    if not step: step = rev_duration/100
+
     start = ts.from_datetime(datetime.now(UTC).replace(tzinfo=utc))
     end = ts.from_datetime(
         (datetime.now(UTC) + timedelta(seconds=rev_duration * rev_count)).replace(tzinfo=utc)
@@ -67,7 +72,8 @@ def get_trajectory(satellite: EarthSatellite,
         geocentric = satellite.at(time).subpoint()
         positions.append({
             "lat": float(geocentric.latitude.degrees),
-            "lon": float(geocentric.longitude.degrees)
+            "lon": float(geocentric.longitude.degrees),
+            "alt": float(geocentric.elevation.km)
         })
         time = time + timedelta(seconds=step)
     return positions
