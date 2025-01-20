@@ -2,9 +2,9 @@ from skyfield.api import EarthSatellite
 
 class TLE:
     def __init__(urmom, tle):
-        urmom.satname = tle[0].rstrip()
-        urmom.norad_id = int(tle[1][2:7])
-        urmom.lines = tle[1:]
+        urmom.satname: str = tle[0].rstrip()
+        urmom.norad_id: int = int(tle[1][2:7])
+        urmom.lines: list[str] = tle[1:]
 
     def __str__(urmom):
         return f"<TLE satname='{urmom.satname}' norad_id={urmom.norad_id}>"
@@ -15,7 +15,7 @@ class TLE:
 
 class TLEs:
     def __init__(urmom):
-        urmom.tles = []
+        urmom.tles: list[TLE] = []
 
     def load(urmom, tle_path: str):
         tle_lines = [a for a in open(tle_path).read().split("\n") if a]
@@ -36,6 +36,6 @@ class TLEs:
     def search(urmom, name: str) -> list[TLE]:
         tles = []
         for tle in urmom.tles:
-            if name in tle.satname:
+            if name.lower() in tle.satname.lower():
                 tles.append(tle)
         return tles

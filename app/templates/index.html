@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>Satellite Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         html, body {
@@ -12,60 +12,63 @@
             height: 100%;
             overflow: hidden;
         }
-        #map {
+        #container {
+            display: flex;
             height: 100%;
-            width: 100%;
+        }
+        #sidebar {
+            width: 300px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #map {
+            flex-grow: 1;
+        }
+        #search {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #search input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #results li {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        #results li:hover {
+            background-color: #e9ecef;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="container">
+        <div id="sidebar">
+            <div id="search">
+                <input type="text" id="searchInput" placeholder="Search satellites...">
+                <ul id="results"></ul>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.js"></script>
-    <script>
-        const R = 6378;
-
-        const map = L.map('map').setView([0, 0], 2);
-
-        const satellite = L.marker([0, 0]).addTo(map);
-        const circle = L.circle([0, 0], 100000).addTo(map);
-
-        L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {noWrap: true}
-        ).addTo(map);
-
-
-        fetch("/api/trajectory?norad_id=25544")
-            .then(data => data.json())
-            .then(data => {
-                var polylinePoints = [];
-                let lastPoint = null;
-                for (const point of data) {
-                    if (lastPoint) {
-                        if (Math.abs(point.lon - lastPoint.lon) > 180) {
-                            L.polyline(polylinePoints).addTo(map);
-                            polylinePoints = [];
-                        }
-                    }
-                    polylinePoints.push([point.lat, point.lon]);
-                    lastPoint = point;
-                }
-                L.polyline(polylinePoints).addTo(map);
-
-                satellite.setLatLng([data[0].lat, data[0].lon]);
-            });
-
-        setInterval(() => {
-            fetch("/api/position?norad_id=25544")
-                .then(data => data.json())
-                .then(data => {
-                    satellite.setLatLng([data.lat, data.lon]);
-                    circle.setLatLng([data.lat, data.lon]);
-                    circle.setRadius(R*Math.acos(R/(R+data.alt))*1000)
-                });
-        }, 1000);
-    </script>
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 </body>
 </html>
-
